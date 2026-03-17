@@ -4,3 +4,4 @@
 - `smartparking.sql` — SQL to create and populate the database tables
 - `backlog.docx` — Product backlog and sprint backlog
 - `retrospective.docx` — Sprint review and retrospective report
+- `ER-diagram.png` — Entity Relationship Diagram for the Smart Parking Reservation System
