@@ -248,9 +248,9 @@ VALUES (3, 2,
 
 
 -- VERIFICATION QUERIES
-SELECT 'users' AS tbl, COUNT(*) AS row_count FROM users UNION ALL
-SELECT 'vehicles', COUNT(*) FROM vehicles UNION ALL
-SELECT 'parking_slots', COUNT(*) FROM parking_slots UNION ALL
-SELECT 'bookings', COUNT(*) FROM bookings UNION ALL
-SELECT 'payments', COUNT(*) FROM payments UNION ALL
-SELECT 'disputes', COUNT(*) FROM disputes;
+SELECT 'users'         AS tbl, COUNT(*) AS rows FROM users        UNION ALL
+SELECT 'vehicles',              COUNT(*)        FROM vehicles      UNION ALL
+SELECT 'parking_slots',         COUNT(*)        FROM parking_slots UNION ALL
+SELECT 'bookings',              COUNT(*)        FROM bookings      UNION ALL
+SELECT 'payments',              COUNT(*)        FROM payments      UNION ALL
+SELECT 'disputes',              COUNT(*)        FROM disputes;
