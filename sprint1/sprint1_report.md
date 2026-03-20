@@ -1,5 +1,5 @@
 # Sprint 1 Report
-Video Link: [youtube.com/]
+Video Link: [https://youtu.be/MTWCns2MqGs]
 
 ## What's New (User Facing)
 * Users can register an account with a unique email and a role of either user or admin
