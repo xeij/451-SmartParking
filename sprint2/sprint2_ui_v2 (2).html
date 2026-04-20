@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Smart Parking Reservation System</title>
+<style>
+  :root {
+    --bg: #f5f5f5;
+    --white: #ffffff;
+    --primary: #1f2d3d;
+    --primary-light: #2c3e50;
+    --accent: #27ae60;
+    --danger: #c0392b;
+    --warning: #d68910;
+    --text: #1f2d3d;
+    --muted: #888;
+    --border: #ddd;
+    --radius: 4px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+
+  /* Layout */
+  .app { display: flex; min-height: 100vh; }
+  .sidebar { width: 200px; background: var(--primary); color: #fff; flex-shrink: 0; }
+  .sidebar-header { padding: 18px 16px 14px; border-bottom: 1px solid rgba(255,255,255,0.12); }
+  .sidebar-header h1 { font-size: 13px; font-weight: 600; line-height: 1.4; }
+  .sidebar-header p { font-size: 11px; opacity: 0.5; margin-top: 3px; }
+  .nav-section { padding: 8px 0 4px; }
+  .nav-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; opacity: 0.4; padding: 4px 16px 5px; }
+  .nav-item { display: flex; align-items: center; gap: 8px; padding: 9px 16px; cursor: pointer; font-size: 13px; }
+  .nav-item:hover { background: rgba(255,255,255,0.07); }
+  .nav-item.active { background: rgba(255,255,255,0.13); font-weight: 600; }
+  .nav-item span { font-size: 13px; }
+
+  /* Main */
+  .main { flex: 1; padding: 24px 28px; overflow-x: auto; }
+  .page-title { font-size: 20px; font-weight: 700; margin-bottom: 16px; }
+  .page-sub { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+
+  /* Cards */
+  .card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 16px; }
+  .card-title { font-size: 13px; font-weight: 600; margin-bottom: 12px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+
+  /* Forms */
+  .form-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+  .form-group { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 150px; }
+  .form-group label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.3px; }
+  .form-group input, .form-group select { padding: 7px 9px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; background: #fff; }
+  .form-group input:focus, .form-group select:focus { outline: none; border-color: #666; }
+  .form-group input.error { border-color: var(--danger); }
+
+  /* Buttons */
+  .btn { padding: 7px 14px; border: none; border-radius: var(--radius); font-size: 13px; font-weight: 500; cursor: pointer; }
+  .btn:hover { filter: brightness(0.92); }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-success { background: var(--accent); color: #fff; }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-warning { background: var(--warning); color: #fff; }
+  .btn-sm { padding: 4px 9px; font-size: 12px; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #f9f9f9; text-align: left; padding: 9px 11px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--muted); border-bottom: 1px solid var(--border); }
+  td { padding: 9px 11px; border-bottom: 1px solid #eee; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafafa; }
+
+  /* Badges — simpler, less colorful */
+  .badge { display: inline-block; padding: 2px 7px; border-radius: 3px; font-size: 11px; font-weight: 500; border: 1px solid transparent; }
+  .badge-green  { background: #eaf5ee; color: #276738; border-color: #c3dfc9; }
+  .badge-blue   { background: #eaf0f8; color: #1a3d6e; border-color: #c0d0e8; }
+  .badge-orange { background: #fdf3e3; color: #8a5a00; border-color: #e8d0a0; }
+  .badge-red    { background: #faeaea; color: #8a1f1f; border-color: #e8c0c0; }
+  .badge-gray   { background: #f2f2f2; color: #555; border-color: #ddd; }
+  .badge-purple { background: #f3eef8; color: #5a3278; border-color: #d0bde8; }
+
+  /* Alerts */
+  .alert { padding: 10px 14px; border-radius: var(--radius); font-size: 13px; margin-bottom: 12px; border: 1px solid transparent; }
+  .alert-success { background: #eaf5ee; color: #276738; border-color: #c3dfc9; }
+  .alert-error   { background: #faeaea; color: #8a1f1f; border-color: #e8c0c0; }
+  .alert-warning { background: #fdf3e3; color: #7a4f00; border-color: #e8d0a0; }
+  .alert-info    { background: #eaf0f8; color: #1a3d6e; border-color: #c0d0e8; }
+
+  /* Stats */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .stat-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; text-align: center; }
+  .stat-num { font-size: 24px; font-weight: 700; color: var(--primary); }
+  .stat-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 0; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
+  .tab { padding: 7px 14px; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--primary); border-color: var(--primary); font-weight: 600; }
+
+  /* Hidden */
+  .page { display: none; }
+  .page.active { display: block; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* SQL block */
+  .sql-block { background: #1a1f27; color: #b0c8e0; font-family: 'Consolas', 'Courier New', monospace; font-size: 12px; padding: 12px 14px; border-radius: var(--radius); margin: 8px 0; white-space: pre-wrap; line-height: 1.7; }
+  .sql-kw { color: #6fa8d0; font-weight: bold; }
+  .sql-str { color: #99d9a0; }
+  .sql-cm { color: #666; }
+  .sql-fn { color: #d4a870; }
+
+  /* Edge case demo */
+  .ec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .ec-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+  .ec-title { font-size: 13px; font-weight: 600; margin-bottom: 5px; }
+  .ec-desc { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+
+  /* Query result */
+  .qresult { margin-top: 12px; }
+  .qresult table { font-size: 12px; }
+  .qresult th { font-size: 10px; }
+
+  @media(max-width: 768px) {
+    .sidebar { width: 48px; }
+    .sidebar-header h1, .sidebar-header p, .nav-label, .nav-item span + * { display: none; }
+    .nav-item { justify-content: center; padding: 10px; }
+    .ec-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ── SIDEBAR ── -->
+<div class="sidebar">
+  <div class="sidebar-header">
+    <h1>Smart Parking System</h1>
+    <p>Database UI Demo</p>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Main</div>
+    <div class="nav-item active" onclick="showPage('dashboard')">Dashboard</div>
+    <div class="nav-item" onclick="showPage('users')">Users</div>
+    <div class="nav-item" onclick="showPage('vehicles')">Vehicles</div>
+    <div class="nav-item" onclick="showPage('slots')">Parking Slots</div>
+    <div class="nav-item" onclick="showPage('bookings')">Bookings</div>
+    <div class="nav-item" onclick="showPage('payments')">Payments</div>
+    <div class="nav-item" onclick="showPage('disputes')">Disputes</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Demo</div>
+    <div class="nav-item" onclick="showPage('edge')">Edge Cases</div>
+    <div class="nav-item" onclick="showPage('queries')">Adv. Queries</div>
+  </div>
+</div>
+
+<!-- ── MAIN ── -->
+<div class="main">
+
+<!-- DASHBOARD -->
+<div id="page-dashboard" class="page active">
+  <div class="page-title">Dashboard</div>
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-num">7</div><div class="stat-label">Users</div></div>
+    <div class="stat-card"><div class="stat-num">8</div><div class="stat-label">Vehicles</div></div>
+    <div class="stat-card"><div class="stat-num">8</div><div class="stat-label">Parking Slots</div></div>
+    <div class="stat-card"><div class="stat-num">10</div><div class="stat-label">Bookings</div></div>
+    <div class="stat-card"><div class="stat-num">10</div><div class="stat-label">Payments</div></div>
+    <div class="stat-card"><div class="stat-num">3</div><div class="stat-label">Disputes</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Recent Bookings</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ID</th><th>User</th><th>Slot</th><th>Start</th><th>End</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>10</td><td>Bob Smith</td><td>C2-01</td><td>2025-04-06 11:00</td><td>2025-04-06 13:00</td><td><span class="badge badge-gray">no_show</span></td></tr>
+          <tr><td>9</td><td>Alice Johnson</td><td>B1-01</td><td>2025-04-05 08:00</td><td>2025-04-05 10:00</td><td><span class="badge badge-green">completed</span></td></tr>
+          <tr><td>8</td><td>Nina Patel</td><td>A2-02</td><td>2025-04-02 14:00</td><td>2025-04-02 16:00</td><td><span class="badge badge-blue">active</span></td></tr>
+          <tr><td>7</td><td>James Miller</td><td>A2-01</td><td>2025-04-01 09:00</td><td>2025-04-01 11:00</td><td><span class="badge badge-green">completed</span></td></tr>
+          <tr><td>5</td><td>Carol White</td><td>C2-01</td><td>2025-03-08 10:00</td><td>2025-03-08 12:00</td><td><span class="badge badge-orange">reserved</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Open Disputes</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ID</th><th>Opened By</th><th>Booking</th><th>Reason</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>2</td><td>Bob Smith</td><td>#3</td><td>incorrect_slot</td><td><span class="badge badge-red">open</span></td></tr>
+          <tr><td>1</td><td>Bob Smith</td><td>#4</td><td>double_charge</td><td><span class="badge badge-orange">in_review</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- USERS -->
+<div id="page-users" class="page">
+  <div class="page-title">Users</div>
+  <div id="alert-users"></div>
+  <div class="card">
+    <div class="card-title">Add New User</div>
+    <div class="form-row">
+      <div class="form-group"><label>First Name</label><input id="u-fname" placeholder="Alice"/></div>
+      <div class="form-group"><label>Last Name</label><input id="u-lname" placeholder="Johnson"/></div>
+      <div class="form-group"><label>Email *</label><input id="u-email" placeholder="alice@email.com"/></div>
+      <div class="form-group"><label>Phone</label><input id="u-phone" placeholder="555-0101"/></div>
+      <div class="form-group"><label>Role *</label>
+        <select id="u-role"><option value="user">user</option><option value="admin">admin</option></select>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="addUser()">Insert User</button>
+  </div>
+  <div class="card">
+    <div class="card-title">Users Table</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Active</th><th>Actions</th></tr></thead>
+        <tbody id="users-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- VEHICLES -->
+<div id="page-vehicles" class="page">
+  <div class="page-title">Vehicles</div>
+  <div id="alert-vehicles"></div>
+  <div class="card">
+    <div class="card-title">Register Vehicle</div>
+    <div class="form-row">
+      <div class="form-group"><label>User ID *</label><input id="v-uid" placeholder="1" type="number"/></div>
+      <div class="form-group"><label>Plate Number *</label><input id="v-plate" placeholder="ABC-1234"/></div>
+      <div class="form-group"><label>Make</label><input id="v-make" placeholder="Toyota"/></div>
+      <div class="form-group"><label>Model</label><input id="v-model" placeholder="Camry"/></div>
+      <div class="form-group"><label>Color</label><input id="v-color" placeholder="Blue"/></div>
+      <div class="form-group"><label>Year</label><input id="v-year" placeholder="2020" type="number"/></div>
+    </div>
+    <button class="btn btn-primary" onclick="addVehicle()">Register Vehicle</button>
+  </div>
+  <div class="card">
+    <div class="card-title">Vehicles Table</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ID</th><th>User</th><th>Plate</th><th>Make</th><th>Model</th><th>Color</th><th>Year</th><th>Status</th></tr></thead>
+        <tbody id="vehicles-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- SLOTS -->
+<div id="page-slots" class="page">
+  <div class="page-title">Parking Slots</div>
+  <div id="alert-slots"></div>
+  <div class="card">
+    <div class="card-title">Add Parking Slot</div>
+    <div class="form-row">
+      <div class="form-group"><label>Slot Code *</label><input id="s-code" placeholder="D1-01"/></div>
+      <div class="form-group"><label>Level</label><input id="s-level" placeholder="Level 1"/></div>
+      <div class="form-group"><label>Zone</label><input id="s-zone" placeholder="Zone D"/></div>
+      <div class="form-group"><label>Status</label>
+        <select id="s-status"><option>active</option><option>maintenance</option><option>closed</option></select>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="addSlot()">Add Slot</button>
+  </div>
+  <div class="card">
+    <div class="card-title">Parking Slots Table</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ID</th><th>Code</th><th>Level</th><th>Zone</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="slots-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- BOOKINGS -->
+<div id="page-bookings" class="page">
+  <div class="page-title">Bookings</div>
+  <div id="alert-bookings"></div>
+  <div class="card">
+    <div class="card-title">Create Booking</div>
+    <div class="form-row">
+      <div class="form-group"><label>User ID *</label><input id="b-uid" placeholder="1" type="number"/></div>
+      <div class="form-group"><label>Vehicle ID</label><input id="b-vid" placeholder="1" type="number"/></div>
+      <div class="form-group"><label>Slot ID *</label><input id="b-sid" placeholder="1" type="number"/></div>
+      <div class="form-group"><label>Start Time *</label><input id="b-start" type="datetime-local"/></div>
+      <div class="form-group"><label>End Time *</label><input id="b-end" type="datetime-local"/></div>
+    </div>
+    <button class="btn btn-primary" onclick="addBooking()">Create Booking</button>
+  </div>
+  <div class="card">
+    <div class="card-title">Bookings Table</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ID</th><th>User</th><th>Slot</th><th>Vehicle</th><th>Start</th><th>End</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="bookings-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- PAYMENTS -->
+<div id="page-payments" class="page">
+  <div class="page-title">Payments</div>
+  <div class="card">
+    <div class="card-title">Payments Table</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ID</th><th>Booking</th><th>Amount (USD)</th><th>Currency</th><th>Status</th><th>Provider</th><th>Paid At</th></tr></thead>
+        <tbody id="payments-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Update Payment Status</div>
+    <div class="form-row">
+      <div class="form-group"><label>Payment ID</label><input id="p-id" placeholder="1" type="number"/></div>
+      <div class="form-group"><label>New Status</label>
+        <select id="p-status"><option>pending</option><option>authorized</option><option>paid</option><option>failed</option><option>refunded</option></select>
+      </div>
+    </div>
+    <button class="btn btn-warning" onclick="updatePayment()">Update Status</button>
+    <div id="alert-payments"></div>
+  </div>
+</div>
+
+<!-- DISPUTES -->
+<div id="page-disputes" class="page">
+  <div class="page-title">Disputes</div>
+  <div id="alert-disputes"></div>
+  <div class="card">
+    <div class="card-title">Open New Dispute</div>
+    <div class="form-row">
+      <div class="form-group"><label>Booking ID *</label><input id="d-bid" placeholder="1" type="number"/></div>
+      <div class="form-group"><label>Opened By User ID *</label><input id="d-uid" placeholder="1" type="number"/></div>
+      <div class="form-group"><label>Reason *</label><input id="d-reason" placeholder="double_charge"/></div>
+      <div class="form-group"><label>Description</label><input id="d-desc" placeholder="Details..."/></div>
+    </div>
+    <button class="btn btn-warning" onclick="addDispute()">Open Dispute</button>
+  </div>
+  <div class="card">
+    <div class="card-title">Disputes Table</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ID</th><th>Booking</th><th>Opened By</th><th>Admin</th><th>Reason</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="disputes-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- EDGE CASES -->
+<div id="page-edge" class="page">
+  <div class="page-title" style="margin-bottom:16px;">Edge Cases & Failure Handling</div>
+  <div class="ec-grid">
+
+    <div class="ec-card">
+      <div class="ec-title">EC-01: Duplicate Email</div>
+      <div class="ec-desc">Attempts to register a user with an email that already exists in the system.</div>
+      <div class="sql-block"><span class="sql-kw">INSERT INTO</span> users (email, password_hash, role)
+<span class="sql-kw">VALUES</span> (<span class="sql-str">'alice.johnson@email.com'</span>, <span class="sql-str">'pw'</span>, <span class="sql-str">'user'</span>);</div>
+      <button class="btn btn-danger btn-sm" onclick="runEC(1)">Run Test</button>
+      <div id="ec-result-1" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="ec-card">
+      <div class="ec-title">EC-02: Invalid Booking Time</div>
+      <div class="ec-desc">Attempts to create a booking where end_time is before start_time.</div>
+      <div class="sql-block"><span class="sql-kw">INSERT INTO</span> bookings (user_id, slot_id, start_time, end_time, status)
+<span class="sql-kw">VALUES</span> (1, 1, <span class="sql-str">'2025-05-01 10:00'</span>, <span class="sql-str">'2025-05-01 08:00'</span>, <span class="sql-str">'reserved'</span>);</div>
+      <button class="btn btn-danger btn-sm" onclick="runEC(2)">Run Test</button>
+      <div id="ec-result-2" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="ec-card">
+      <div class="ec-title">EC-03: Duplicate Payment</div>
+      <div class="ec-desc">Attempts to insert a second payment for booking #1, which already has a payment.</div>
+      <div class="sql-block"><span class="sql-kw">INSERT INTO</span> payments (booking_id, amount_cents, currency, status, provider)
+<span class="sql-kw">VALUES</span> (1, 500, <span class="sql-str">'USD'</span>, <span class="sql-str">'pending'</span>, <span class="sql-str">'Stripe'</span>);</div>
+      <button class="btn btn-danger btn-sm" onclick="runEC(3)">Run Test</button>
+      <div id="ec-result-3" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="ec-card">
+      <div class="ec-title">EC-04: Invalid Role</div>
+      <div class="ec-desc">Attempts to register a user with a role value outside 'user' or 'admin'.</div>
+      <div class="sql-block"><span class="sql-kw">INSERT INTO</span> users (email, password_hash, role)
+<span class="sql-kw">VALUES</span> (<span class="sql-str">'hacker@email.com'</span>, <span class="sql-str">'pw'</span>, <span class="sql-str">'superadmin'</span>);</div>
+      <button class="btn btn-danger btn-sm" onclick="runEC(4)">Run Test</button>
+      <div id="ec-result-4" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="ec-card">
+      <div class="ec-title">EC-05: Delete User With Bookings</div>
+      <div class="ec-desc">Attempts to hard-delete a user who has existing booking records.</div>
+      <div class="sql-block"><span class="sql-kw">DELETE FROM</span> users <span class="sql-kw">WHERE</span> user_id = 1;
+<span class="sql-cm">-- FK on bookings.user_id blocks this</span></div>
+      <button class="btn btn-danger btn-sm" onclick="runEC(5)">Run Test</button>
+      <div id="ec-result-5" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="ec-card">
+      <div class="ec-title">EC-06: Invalid Slot Status</div>
+      <div class="ec-desc">Attempts to set a parking slot status to a value not in the allowed list.</div>
+      <div class="sql-block"><span class="sql-kw">UPDATE</span> parking_slots <span class="sql-kw">SET</span> status = <span class="sql-str">'broken'</span>
+<span class="sql-kw">WHERE</span> slot_id = 1;
+<span class="sql-cm">-- CHECK constraint rejects 'broken'</span></div>
+      <button class="btn btn-danger btn-sm" onclick="runEC(6)">Run Test</button>
+      <div id="ec-result-6" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="ec-card">
+      <div class="ec-title">EC-07: Dispute with Non-Existent Booking</div>
+      <div class="ec-desc">Attempts to open a dispute referencing a booking that does not exist.</div>
+      <div class="sql-block"><span class="sql-kw">INSERT INTO</span> disputes (booking_id, opened_by_user_id, reason, status)
+<span class="sql-kw">VALUES</span> (9999, 1, <span class="sql-str">'test'</span>, <span class="sql-str">'open'</span>);
+<span class="sql-cm">-- FK on disputes.booking_id rejects this</span></div>
+      <button class="btn btn-danger btn-sm" onclick="runEC(7)">Run Test</button>
+      <div id="ec-result-7" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="ec-card">
+      <div class="ec-title">EC-08: Soft Delete (Correct Approach)</div>
+      <div class="ec-desc">Shows the correct way to deactivate a user without violating FK constraints.</div>
+      <div class="sql-block"><span class="sql-cm">-- WRONG: DELETE FROM users WHERE user_id = 1;</span>
+<span class="sql-cm">-- CORRECT soft delete:</span>
+<span class="sql-kw">UPDATE</span> users <span class="sql-kw">SET</span> is_active = 0, updated_at = <span class="sql-fn">SYSDATE</span>
+<span class="sql-kw">WHERE</span> user_id = 1;</div>
+      <button class="btn btn-success btn-sm" onclick="runEC(8)">Run Test</button>
+      <div id="ec-result-8" style="margin-top:10px;"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ADVANCED QUERIES -->
+<div id="page-queries" class="page">
+  <div class="page-title">Advanced Retrieval Queries</div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('q1')">AQ1</div>
+    <div class="tab" onclick="showTab('q2')">AQ2</div>
+    <div class="tab" onclick="showTab('q3')">AQ3</div>
+    <div class="tab" onclick="showTab('q4')">AQ4</div>
+    <div class="tab" onclick="showTab('q5')">AQ5</div>
+    <div class="tab" onclick="showTab('q6')">AQ6</div>
+    <div class="tab" onclick="showTab('q7')">AQ7</div>
+    <div class="tab" onclick="showTab('q8')">AQ8</div>
+    <div class="tab" onclick="showTab('q9')">AQ9</div>
+    <div class="tab" onclick="showTab('q10')">AQ10</div>
+  </div>
+
+  <div id="tab-q1" class="tab-content active">
+    <div class="card">
+      <div class="card-title">AQ1 — Full Booking Report (Users + Slots JOIN)</div>
+      <p style="font-size:13px;margin-bottom:10px;"><strong>Scenario:</strong> Admin views all bookings with user names and slot details.</p>
+      <div class="sql-block"><span class="sql-kw">SELECT</span> b.booking_id, u.first_name || <span class="sql-str">' '</span> || u.last_name <span class="sql-kw">AS</span> user_name,
+       ps.slot_code, ps.level_name, ps.zone, b.start_time, b.end_time, b.status
+<span class="sql-kw">FROM</span> bookings b
+<span class="sql-kw">JOIN</span> users u <span class="sql-kw">ON</span> b.user_id = u.user_id
+<span class="sql-kw">JOIN</span> parking_slots ps <span class="sql-kw">ON</span> b.slot_id = ps.slot_id
+<span class="sql-kw">ORDER BY</span> b.start_time <span class="sql-kw">DESC</span>;</div>
+      <p style="font-size:12px;color:var(--muted);margin:8px 0 4px;"><strong>Why JOIN:</strong> booking records store only IDs; names and slot codes live in separate tables.</p>
+      <div class="qresult"><table><thead><tr><th>booking_id</th><th>user_name</th><th>slot_code</th><th>level</th><th>zone</th><th>status</th></tr></thead><tbody>
+        <tr><td>10</td><td>Bob Smith</td><td>C2-01</td><td>Level 2</td><td>Zone C</td><td><span class="badge badge-gray">no_show</span></td></tr>
+        <tr><td>9</td><td>Alice Johnson</td><td>B1-01</td><td>Level 1</td><td>Zone B</td><td><span class="badge badge-green">completed</span></td></tr>
+        <tr><td>8</td><td>Nina Patel</td><td>A2-02</td><td>Level 2</td><td>Zone A</td><td><span class="badge badge-blue">active</span></td></tr>
+        <tr><td>7</td><td>James Miller</td><td>A2-01</td><td>Level 2</td><td>Zone A</td><td><span class="badge badge-green">completed</span></td></tr>
+        <tr><td>6</td><td>Carol White</td><td>A1-02</td><td>Level 1</td><td>Zone A</td><td><span class="badge badge-gray">cancelled</span></td></tr>
+      </tbody></table></div>
+    </div>
+  </div>
+
+  <div id="tab-q2" class="tab-content">
+    <div class="card">
+      <div class="card-title">AQ2 — Transaction Report (4-table JOIN)</div>
+      <p style="font-size:13px;margin-bottom:10px;"><strong>Scenario:</strong> Finance team views bookings with vehicle and payment details.</p>
+      <div class="sql-block"><span class="sql-kw">SELECT</span> b.booking_id, u.email, v.plate_number,
+       v.make || <span class="sql-str">' '</span> || v.model <span class="sql-kw">AS</span> vehicle,
+       p.amount_cents / 100 <span class="sql-kw">AS</span> amount_usd, p.status <span class="sql-kw">AS</span> payment_status, p.paid_at
+<span class="sql-kw">FROM</span> bookings b
+<span class="sql-kw">JOIN</span> users u <span class="sql-kw">ON</span> b.user_id = u.user_id
+<span class="sql-kw">JOIN</span> vehicles v <span class="sql-kw">ON</span> b.vehicle_id = v.vehicle_id
+<span class="sql-kw">JOIN</span> payments p <span class="sql-kw">ON</span> b.booking_id = p.booking_id
+<span class="sql-kw">ORDER BY</span> p.paid_at <span class="sql-kw">DESC NULLS LAST</span>;</div>
+      <p style="font-size:12px;color:var(--muted);margin:8px 0 4px;"><strong>Why JOIN:</strong> requires 4 tables — users, vehicles, bookings, payments — to produce one transaction row.</p>
+      <div class="qresult"><table><thead><tr><th>booking_id</th><th>email</th><th>plate</th><th>vehicle</th><th>amount_usd</th><th>payment_status</th></tr></thead><tbody>
+        <tr><td>9</td><td>alice.johnson@email.com</td><td>ABC-1234</td><td>Toyota Camry</td><td>$10.00</td><td><span class="badge badge-green">paid</span></td></tr>
+        <tr><td>7</td><td>james.miller@email.com</td><td>DEF-6789</td><td>BMW 3 Series</td><td>$12.00</td><td><span class="badge badge-green">paid</span></td></tr>
+        <tr><td>3</td><td>bob.smith@email.com</td><td>LMN-9012</td><td>Ford Focus</td><td>$10.00</td><td><span class="badge badge-green">paid</span></td></tr>
+        <tr><td>5</td><td>carol.white@email.com</td><td>JKL-7890</td><td>Nissan Altima</td><td>$10.00</td><td><span class="badge badge-orange">pending</span></td></tr>
+        <tr><td>10</td><td>bob.smith@email.com</td><td>LMN-9012</td><td>Ford Focus</td><td>$10.00</td><td><span class="badge badge-red">failed</span></td></tr>
+      </tbody></table></div>
+    </div>
+  </div>
+
+  <div id="tab-q3" class="tab-content">
+    <div class="card">
+      <div class="card-title">AQ3 — Available Slots for a Time Window</div>
+      <p style="font-size:13px;margin-bottom:10px;"><strong>Scenario:</strong> User searches for open slots on May 1st 10am–12pm.</p>
+      <div class="sql-block"><span class="sql-kw">SELECT</span> ps.slot_id, ps.slot_code, ps.level_name, ps.zone
+<span class="sql-kw">FROM</span> parking_slots ps
+<span class="sql-kw">WHERE</span> ps.status = <span class="sql-str">'active'</span>
+  <span class="sql-kw">AND</span> ps.slot_id <span class="sql-kw">NOT IN</span> (
+    <span class="sql-kw">SELECT</span> b.slot_id <span class="sql-kw">FROM</span> bookings b
+    <span class="sql-kw">WHERE</span> b.status <span class="sql-kw">NOT IN</span> (<span class="sql-str">'cancelled'</span>,<span class="sql-str">'completed'</span>,<span class="sql-str">'no_show'</span>)
+      <span class="sql-kw">AND</span> b.start_time &lt; <span class="sql-fn">TO_DATE</span>(<span class="sql-str">'2025-05-01 12:00'</span>,<span class="sql-str">'YYYY-MM-DD HH24:MI'</span>)
+      <span class="sql-kw">AND</span> b.end_time &gt; <span class="sql-fn">TO_DATE</span>(<span class="sql-str">'2025-05-01 10:00'</span>,<span class="sql-str">'YYYY-MM-DD HH24:MI'</span>))
+<span class="sql-kw">ORDER BY</span> ps.slot_code;</div>
+      <p style="font-size:12px;color:var(--muted);margin:8px 0 4px;"><strong>Why JOIN:</strong> subquery correlates parking_slots with bookings to detect overlapping reservations.</p>
+      <div class="qresult"><table><thead><tr><th>slot_id</th><th>slot_code</th><th>level</th><th>zone</th></tr></thead><tbody>
+        <tr><td>1</td><td>A1-01</td><td>Level 1</td><td>Zone A</td></tr>
+        <tr><td>2</td><td>A1-02</td><td>Level 1</td><td>Zone A</td></tr>
+        <tr><td>3</td><td>B1-01</td><td>Level 1</td><td>Zone B</td></tr>
+        <tr><td>5</td><td>C2-01</td><td>Level 2</td><td>Zone C</td></tr>
+        <tr><td>7</td><td>A2-01</td><td>Level 2</td><td>Zone A</td></tr>
+        <tr><td>8</td><td>A2-02</td><td>Level 2</td><td>Zone A</td></tr>
+      </tbody></table></div>
+    </div>
+  </div>
+
+  <div id="tab-q4" class="tab-content">
+    <div class="card">
+      <div class="card-title">AQ4 — Revenue Per User (GROUP BY)</div>
+      <p style="font-size:13px;margin-bottom:10px;"><strong>Scenario:</strong> Business analyst identifies highest-spending users.</p>
+      <div class="sql-block"><span class="sql-kw">SELECT</span> u.user_id, u.first_name || <span class="sql-str">' '</span> || u.last_name <span class="sql-kw">AS</span> user_name,
+       <span class="sql-fn">COUNT</span>(p.payment_id) <span class="sql-kw">AS</span> total_bookings,
+       <span class="sql-fn">SUM</span>(p.amount_cents) / 100 <span class="sql-kw">AS</span> total_spent_usd
+<span class="sql-kw">FROM</span> users u
+<span class="sql-kw">JOIN</span> bookings b <span class="sql-kw">ON</span> u.user_id = b.user_id
+<span class="sql-kw">JOIN</span> payments p <span class="sql-kw">ON</span> b.booking_id = p.booking_id
+<span class="sql-kw">WHERE</span> p.status = <span class="sql-str">'paid'</span>
+<span class="sql-kw">GROUP BY</span> u.user_id, u.first_name, u.last_name
+<span class="sql-kw">ORDER BY</span> total_spent_usd <span class="sql-kw">DESC</span>;</div>
+      <p style="font-size:12px;color:var(--muted);margin:8px 0 4px;"><strong>Why GROUP BY:</strong> aggregates payment totals per user across multiple bookings.</p>
+      <div class="qresult"><table><thead><tr><th>user_id</th><th>user_name</th><th>total_bookings</th><th>total_spent_usd</th></tr></thead><tbody>
+        <tr><td>1</td><td>Alice Johnson</td><td>3</td><td>$30.00</td></tr>
+        <tr><td>2</td><td>Bob Smith</td><td>1</td><td>$10.00</td></tr>
+        <tr><td>6</td><td>James Miller</td><td>1</td><td>$12.00</td></tr>
+      </tbody></table></div>
+    </div>
+  </div>
+
+  <div id="tab-q5" class="tab-content">
+    <div class="card">
+      <div class="card-title">AQ5 — Dispute Dashboard (LEFT JOIN)</div>
+      <p style="font-size:13px;margin-bottom:10px;"><strong>Scenario:</strong> Admin sees all disputes with opener, assigned admin, and slot.</p>
+      <div class="sql-block"><span class="sql-kw">SELECT</span> d.dispute_id,
+       op.first_name || <span class="sql-str">' '</span> || op.last_name <span class="sql-kw">AS</span> opened_by,
+       ad.first_name || <span class="sql-str">' '</span> || ad.last_name <span class="sql-kw">AS</span> assigned_admin,
+       ps.slot_code, b.start_time, d.reason, d.status
+<span class="sql-kw">FROM</span> disputes d
+<span class="sql-kw">JOIN</span> bookings b <span class="sql-kw">ON</span> d.booking_id = b.booking_id
+<span class="sql-kw">JOIN</span> users op <span class="sql-kw">ON</span> d.opened_by_user_id = op.user_id
+<span class="sql-kw">LEFT JOIN</span> users ad <span class="sql-kw">ON</span> d.assigned_admin_id = ad.user_id
+<span class="sql-kw">JOIN</span> parking_slots ps <span class="sql-kw">ON</span> b.slot_id = ps.slot_id
+<span class="sql-kw">ORDER BY</span> d.created_at <span class="sql-kw">DESC</span>;</div>
+      <p style="font-size:12px;color:var(--muted);margin:8px 0 4px;"><strong>Why LEFT JOIN:</strong> admin may be NULL for open disputes — LEFT JOIN prevents those rows from being excluded.</p>
+      <div class="qresult"><table><thead><tr><th>dispute_id</th><th>opened_by</th><th>assigned_admin</th><th>slot_code</th><th>reason</th><th>status</th></tr></thead><tbody>
+        <tr><td>3</td><td>Carol White</td><td>Sara Admin</td><td>A1-02</td><td>no_refund</td><td><span class="badge badge-green">resolved</span></td></tr>
+        <tr><td>2</td><td>Bob Smith</td><td>—</td><td>B1-01</td><td>incorrect_slot</td><td><span class="badge badge-red">open</span></td></tr>
+        <tr><td>1</td><td>Bob Smith</td><td>Dave Admin</td><td>A1-01</td><td>double_charge</td><td><span class="badge badge-orange">in_review</span></td></tr>
+      </tbody></table></div>
+    </div>
+  </div>
+
+  <div id="tab-q6" class="tab-content">
+    <div class="card">
+      <div class="card-title">AQ6 — Most Booked Slots (GROUP BY)</div>
+      <p style="font-size:13px;margin-bottom:10px;"><strong>Scenario:</strong> Operations team identifies highest-demand slots.</p>
+      <div class="sql-block"><span class="sql-kw">SELECT</span> ps.slot_code, ps.level_name, ps.zone,
+       <span class="sql-fn">COUNT</span>(b.booking_id) <span class="sql-kw">AS</span> total_bookings
+<span class="sql-kw">FROM</span> parking_slots ps
+<span class="sql-kw">JOIN</span> bookings b <span class="sql-kw">ON</span> ps.slot_id = b.slot_id
+<span class="sql-kw">GROUP BY</span> ps.slot_code, ps.level_name, ps.zone
+<span class="sql-kw">ORDER BY</span> total_bookings <span class="sql-kw">DESC</span>;</div>
+      <p style="font-size:12px;color:var(--muted);margin:8px 0 4px;"><strong>Why GROUP BY:</strong> counts bookings per slot — requires aggregation across the bookings table.</p>
+      <div class="qresult"><table><thead><tr><th>slot_code</th><th>level</th><th>zone</th><th>total_bookings</th></tr></thead><tbody>
+        <tr><td>A1-01</td><td>Level 1</td><td>Zone A</td><td>2</td></tr>
+        <tr><td>A1-02</td><td>Level 1</td><td>Zone A</td><td>2</td></tr>
+        <tr><td>B1-01</td><td>Level 1</td><td>Zone B</td><td>2</td></tr>
+        <tr><td>C2-01</td><td>Level 2</td><td>Zone C</td><td>2</td></tr>
+        <tr><td>A2-01</td><td>Level 2</td><td>Zone A</td><td>1</td></tr>
+        <tr><td>A2-02</td><td>Level 2</td><td>Zone A</td><td>1</td></tr>
+      </tbody></table></div>
+    </div>
+  </div>
+
+  <div id="tab-q7" class="tab-content">
+    <div class="card">
+      <div class="card-title">AQ7 — Users With Open Disputes (GROUP BY)</div>
+      <p style="font-size:13px;margin-bottom:10px;"><strong>Scenario:</strong> Trust team flags accounts with unresolved disputes.</p>
+      <div class="sql-block"><span class="sql-kw">SELECT</span> u.user_id, u.first_name || <span class="sql-str">' '</span> || u.last_name <span class="sql-kw">AS</span> user_name,
+       u.email, <span class="sql-fn">COUNT</span>(d.dispute_id) <span class="sql-kw">AS</span> open_disputes
+<span class="sql-kw">FROM</span> users u
+<span class="sql-kw">JOIN</span> bookings b <span class="sql-kw">ON</span> u.user_id = b.user_id
+<span class="sql-kw">JOIN</span> disputes d <span class="sql-kw">ON</span> b.booking_id = d.booking_id
+<span class="sql-kw">WHERE</span> d.status <span class="sql-kw">IN</span> (<span class="sql-str">'open'</span>,<span class="sql-str">'in_review'</span>)
+<span class="sql-kw">GROUP BY</span> u.user_id, u.first_name, u.last_name, u.email
+<span class="sql-kw">ORDER BY</span> open_disputes <span class="sql-kw">DESC</span>;</div>
+      <p style="font-size:12px;color:var(--muted);margin:8px 0 4px;"><strong>Why 2 JOINs:</strong> disputes link to bookings, not directly to users — two JOINs needed to trace back to the user.</p>
+      <div class="qresult"><table><thead><tr><th>user_id</th><th>user_name</th><th>email</th><th>open_disputes</th></tr></thead><tbody>
+        <tr><td>2</td><td>Bob Smith</td><td>bob.smith@email.com</td><td>2</td></tr>
+      </tbody></table></div>
+    </div>
+  </div>
+
+  <div id="tab-q8" class="tab-content">
+    <div class="card">
+      <div class="card-title">AQ8 — Bookings With Failed Payments</div>
+      <p style="font-size:13px;margin-bottom:10px;"><strong>Scenario:</strong> Finance team follows up on failed transactions.</p>
+      <div class="sql-block"><span class="sql-kw">SELECT</span> b.booking_id, u.first_name || <span class="sql-str">' '</span> || u.last_name <span class="sql-kw">AS</span> user_name,
+       u.email, ps.slot_code, b.start_time,
+       p.amount_cents / 100 <span class="sql-kw">AS</span> amount_usd, p.status <span class="sql-kw">AS</span> payment_status
+<span class="sql-kw">FROM</span> bookings b
+<span class="sql-kw">JOIN</span> users u <span class="sql-kw">ON</span> b.user_id = u.user_id
+<span class="sql-kw">JOIN</span> parking_slots ps <span class="sql-kw">ON</span> b.slot_id = ps.slot_id
+<span class="sql-kw">JOIN</span> payments p <span class="sql-kw">ON</span> b.booking_id = p.booking_id
+<span class="sql-kw">WHERE</span> p.status = <span class="sql-str">'failed'</span>
+<span class="sql-kw">ORDER BY</span> b.start_time;</div>
+      <p style="font-size:12px;color:var(--muted);margin:8px 0 4px;"><strong>Why JOIN:</strong> user email, slot code, and payment status live in three different tables.</p>
+      <div class="qresult"><table><thead><tr><th>booking_id</th><th>user_name</th><th>email</th><th>slot_code</th><th>amount_usd</th><th>status</th></tr></thead><tbody>
+        <tr><td>10</td><td>Bob Smith</td><td>bob.smith@email.com</td><td>C2-01</td><td>$10.00</td><td><span class="badge badge-red">failed</span></td></tr>
+      </tbody></table></div>
+    </div>
+  </div>
+
+  <div id="tab-q9" class="tab-content">
+    <div class="card">
+      <div class="card-title">AQ9 — Full Booking History (User 1)</div>
+      <p style="font-size:13px;margin-bottom:10px;"><strong>Scenario:</strong> Alice views her complete booking history in the app.</p>
+      <div class="sql-block"><span class="sql-kw">SELECT</span> b.booking_id, ps.slot_code, ps.zone, v.plate_number,
+       b.start_time, b.end_time, b.status,
+       p.amount_cents / 100 <span class="sql-kw">AS</span> amount_usd, p.status <span class="sql-kw">AS</span> payment_status
+<span class="sql-kw">FROM</span> bookings b
+<span class="sql-kw">JOIN</span> parking_slots ps <span class="sql-kw">ON</span> b.slot_id = ps.slot_id
+<span class="sql-kw">JOIN</span> payments p <span class="sql-kw">ON</span> b.booking_id = p.booking_id
+<span class="sql-kw">LEFT JOIN</span> vehicles v <span class="sql-kw">ON</span> b.vehicle_id = v.vehicle_id
+<span class="sql-kw">WHERE</span> b.user_id = 1
+<span class="sql-kw">ORDER BY</span> b.start_time <span class="sql-kw">DESC</span>;</div>
+      <p style="font-size:12px;color:var(--muted);margin:8px 0 4px;"><strong>Why LEFT JOIN:</strong> vehicle is optional on a booking — LEFT JOIN prevents excluding bookings with no vehicle.</p>
+      <div class="qresult"><table><thead><tr><th>booking_id</th><th>slot_code</th><th>zone</th><th>plate</th><th>status</th><th>amount_usd</th><th>payment</th></tr></thead><tbody>
+        <tr><td>9</td><td>B1-01</td><td>Zone B</td><td>ABC-1234</td><td><span class="badge badge-green">completed</span></td><td>$10.00</td><td><span class="badge badge-green">paid</span></td></tr>
+        <tr><td>2</td><td>A1-02</td><td>Zone A</td><td>XYZ-5678</td><td><span class="badge badge-green">completed</span></td><td>$10.00</td><td><span class="badge badge-green">paid</span></td></tr>
+        <tr><td>1</td><td>A1-01</td><td>Zone A</td><td>ABC-1234</td><td><span class="badge badge-green">completed</span></td><td>$10.00</td><td><span class="badge badge-green">paid</span></td></tr>
+      </tbody></table></div>
+    </div>
+  </div>
+
+  <div id="tab-q10" class="tab-content">
+    <div class="card">
+      <div class="card-title">AQ10 — Daily Bookings by Zone (GROUP BY)</div>
+      <p style="font-size:13px;margin-bottom:10px;"><strong>Scenario:</strong> Operations team analyzes zone utilization by day.</p>
+      <div class="sql-block"><span class="sql-kw">SELECT</span> ps.zone, <span class="sql-fn">TRUNC</span>(b.start_time) <span class="sql-kw">AS</span> booking_date,
+       <span class="sql-fn">COUNT</span>(b.booking_id) <span class="sql-kw">AS</span> bookings_that_day
+<span class="sql-kw">FROM</span> bookings b
+<span class="sql-kw">JOIN</span> parking_slots ps <span class="sql-kw">ON</span> b.slot_id = ps.slot_id
+<span class="sql-kw">WHERE</span> b.status <span class="sql-kw">NOT IN</span> (<span class="sql-str">'cancelled'</span>,<span class="sql-str">'no_show'</span>)
+<span class="sql-kw">GROUP BY</span> ps.zone, <span class="sql-fn">TRUNC</span>(b.start_time)
+<span class="sql-kw">ORDER BY</span> booking_date, ps.zone;</div>
+      <p style="font-size:12px;color:var(--muted);margin:8px 0 4px;"><strong>Why GROUP BY:</strong> aggregates booking counts per zone per day across two tables.</p>
+      <div class="qresult"><table><thead><tr><th>zone</th><th>booking_date</th><th>bookings_that_day</th></tr></thead><tbody>
+        <tr><td>Zone A</td><td>2025-03-01</td><td>1</td></tr>
+        <tr><td>Zone A</td><td>2025-03-03</td><td>1</td></tr>
+        <tr><td>Zone A</td><td>2025-03-07</td><td>1</td></tr>
+        <tr><td>Zone B</td><td>2025-03-05</td><td>1</td></tr>
+        <tr><td>Zone C</td><td>2025-03-08</td><td>1</td></tr>
+        <tr><td>Zone A</td><td>2025-04-01</td><td>1</td></tr>
+        <tr><td>Zone A</td><td>2025-04-02</td><td>1</td></tr>
+        <tr><td>Zone B</td><td>2025-04-05</td><td>1</td></tr>
+      </tbody></table></div>
+    </div>
+  </div>
+
+</div><!-- end queries page -->
+
+</div><!-- end main -->
+</div><!-- end app -->
+
+<script>
+// ── In-memory data store ──────────────────────────────────────
+const db = {
+  users: [
+    {id:1, fname:'Alice', lname:'Johnson', email:'alice.johnson@email.com', phone:'555-0101', role:'user', active:1},
+    {id:2, fname:'Bob', lname:'Smith', email:'bob.smith@email.com', phone:'555-0102', role:'user', active:1},
+    {id:3, fname:'Carol', lname:'White', email:'carol.white@email.com', phone:'555-0103', role:'user', active:1},
+    {id:4, fname:'Dave', lname:'Admin', email:'admin.dave@parking.com', phone:'555-0201', role:'admin', active:1},
+    {id:5, fname:'Sara', lname:'Admin', email:'admin.sara@parking.com', phone:'555-0202', role:'admin', active:1},
+    {id:6, fname:'James', lname:'Miller', email:'james.miller@email.com', phone:'555-0104', role:'user', active:1},
+    {id:7, fname:'Nina', lname:'Patel', email:'nina.patel@email.com', phone:'555-0105', role:'user', active:1},
+  ],
+  vehicles: [
+    {id:1, uid:1, plate:'ABC-1234', make:'Toyota', model:'Camry', color:'Blue', year:2020, active:1},
+    {id:2, uid:1, plate:'XYZ-5678', make:'Honda', model:'Civic', color:'White', year:2019, active:1},
+    {id:3, uid:2, plate:'LMN-9012', make:'Ford', model:'Focus', color:'Black', year:2021, active:1},
+    {id:4, uid:2, plate:'QRS-3456', make:'Chevrolet', model:'Malibu', color:'Red', year:2018, active:1},
+    {id:5, uid:3, plate:'JKL-7890', make:'Nissan', model:'Altima', color:'Silver', year:2022, active:1},
+    {id:6, uid:3, plate:'TUV-2345', make:'Hyundai', model:'Sonata', color:'Gray', year:2020, active:1},
+    {id:7, uid:6, plate:'DEF-6789', make:'BMW', model:'3 Series', color:'Black', year:2023, active:1},
+    {id:8, uid:7, plate:'GHI-0123', make:'Honda', model:'Accord', color:'White', year:2021, active:1},
+  ],
+  slots: [
+    {id:1, code:'A1-01', level:'Level 1', zone:'Zone A', status:'active'},
+    {id:2, code:'A1-02', level:'Level 1', zone:'Zone A', status:'active'},
+    {id:3, code:'B1-01', level:'Level 1', zone:'Zone B', status:'active'},
+    {id:4, code:'B2-01', level:'Level 2', zone:'Zone B', status:'maintenance'},
+    {id:5, code:'C2-01', level:'Level 2', zone:'Zone C', status:'active'},
+    {id:6, code:'C2-02', level:'Level 2', zone:'Zone C', status:'closed'},
+    {id:7, code:'A2-01', level:'Level 2', zone:'Zone A', status:'active'},
+    {id:8, code:'A2-02', level:'Level 2', zone:'Zone A', status:'active'},
+  ],
+  bookings: [
+    {id:1, uid:1, vid:1, sid:1, start:'2025-03-01 08:00', end:'2025-03-01 10:00', status:'completed'},
+    {id:2, uid:1, vid:2, sid:2, start:'2025-03-03 09:00', end:'2025-03-03 11:00', status:'completed'},
+    {id:3, uid:2, vid:3, sid:3, start:'2025-03-05 13:00', end:'2025-03-05 15:00', status:'completed'},
+    {id:4, uid:2, vid:4, sid:1, start:'2025-03-07 07:00', end:'2025-03-07 09:00', status:'disputed'},
+    {id:5, uid:3, vid:5, sid:5, start:'2025-03-08 10:00', end:'2025-03-08 12:00', status:'reserved'},
+    {id:6, uid:3, vid:6, sid:2, start:'2025-03-09 14:00', end:'2025-03-09 16:00', status:'cancelled'},
+    {id:7, uid:6, vid:7, sid:7, start:'2025-04-01 09:00', end:'2025-04-01 11:00', status:'completed'},
+    {id:8, uid:7, vid:8, sid:8, start:'2025-04-02 14:00', end:'2025-04-02 16:00', status:'active'},
+    {id:9, uid:1, vid:1, sid:3, start:'2025-04-05 08:00', end:'2025-04-05 10:00', status:'completed'},
+    {id:10, uid:2, vid:3, sid:5, start:'2025-04-06 11:00', end:'2025-04-06 13:00', status:'no_show'},
+  ],
+  payments: [
+    {id:1, bid:1, cents:1000, currency:'USD', status:'paid', provider:'Stripe', paid:'2025-03-01'},
+    {id:2, bid:2, cents:1000, currency:'USD', status:'paid', provider:'Stripe', paid:'2025-03-03'},
+    {id:3, bid:3, cents:1000, currency:'USD', status:'paid', provider:'Stripe', paid:'2025-03-05'},
+    {id:4, bid:4, cents:1000, currency:'USD', status:'refunded', provider:'Stripe', paid:'2025-03-07'},
+    {id:5, bid:5, cents:1000, currency:'USD', status:'pending', provider:'Stripe', paid:null},
+    {id:6, bid:6, cents:1000, currency:'USD', status:'refunded', provider:'Stripe', paid:'2025-03-09'},
+    {id:7, bid:7, cents:1200, currency:'USD', status:'paid', provider:'Stripe', paid:'2025-04-01'},
+    {id:8, bid:8, cents:1200, currency:'USD', status:'authorized', provider:'Stripe', paid:null},
+    {id:9, bid:9, cents:1000, currency:'USD', status:'paid', provider:'Stripe', paid:'2025-04-05'},
+    {id:10, bid:10, cents:1000, currency:'USD', status:'failed', provider:'Stripe', paid:null},
+  ],
+  disputes: [
+    {id:1, bid:4, opener:2, admin:4, reason:'double_charge', status:'in_review'},
+    {id:2, bid:3, opener:2, admin:null, reason:'incorrect_slot', status:'open'},
+    {id:3, bid:6, opener:3, admin:5, reason:'no_refund', status:'resolved'},
+  ],
+  nextId: {users:8, vehicles:9, slots:9, bookings:11, payments:11, disputes:4}
+};
+
+function userName(uid) {
+  const u = db.users.find(x=>x.id===uid);
+  return u ? u.fname+' '+u.lname : '—';
+}
+function slotCode(sid) {
+  const s = db.slots.find(x=>x.id===sid);
+  return s ? s.code : '—';
+}
+
+function statusBadge(s) {
+  const map = {
+    completed:'green', active:'blue', reserved:'orange', cancelled:'gray',
+    disputed:'red', no_show:'gray', paid:'green', pending:'orange',
+    refunded:'purple', failed:'red', authorized:'blue',
+    open:'red', in_review:'orange', resolved:'green', rejected:'gray',
+    user:'blue', admin:'purple'
+  };
+  return `<span class="badge badge-${map[s]||'gray'}">${s}</span>`;
+}
+
+// ── Render tables ─────────────────────────────────────────────
+function renderUsers() {
+  document.getElementById('users-tbody').innerHTML = db.users.map(u => `
+    <tr>
+      <td>${u.id}</td>
+      <td>${u.fname} ${u.lname}</td>
+      <td>${u.email}</td>
+      <td>${u.phone}</td>
+      <td>${statusBadge(u.role)}</td>
+      <td>${u.active ? 'Yes' : 'No'}</td>
+      <td>
+        <button class="btn btn-danger btn-sm" onclick="softDelete(${u.id})">Deactivate</button>
+      </td>
+    </tr>`).join('');
+}
+function renderVehicles() {
+  document.getElementById('vehicles-tbody').innerHTML = db.vehicles.map(v => `
+    <tr>
+      <td>${v.id}</td>
+      <td>${userName(v.uid)} (${v.uid})</td>
+      <td>${v.plate}</td>
+      <td>${v.make}</td>
+      <td>${v.model}</td>
+      <td>${v.color}</td>
+      <td>${v.year}</td>
+      <td>${v.active ? 'Yes' : 'No'}</td>
+    </tr>`).join('');
+}
+function renderSlots() {
+  document.getElementById('slots-tbody').innerHTML = db.slots.map(s => `
+    <tr>
+      <td>${s.id}</td>
+      <td>${s.code}</td>
+      <td>${s.level}</td>
+      <td>${s.zone}</td>
+      <td>${statusBadge(s.status)}</td>
+      <td>
+        <select onchange="updateSlotStatus(${s.id}, this.value)" style="font-size:12px;padding:3px 6px;border:1px solid #dde3ec;border-radius:4px;">
+          ${['active','maintenance','closed'].map(o=>`<option${s.status===o?' selected':''}>${o}</option>`).join('')}
+        </select>
+      </td>
+    </tr>`).join('');
+}
+function renderBookings() {
+  document.getElementById('bookings-tbody').innerHTML = db.bookings.map(b => `
+    <tr>
+      <td>${b.id}</td>
+      <td>${userName(b.uid)}</td>
+      <td>${slotCode(b.sid)}</td>
+      <td>${b.vid||'—'}</td>
+      <td>${b.start}</td>
+      <td>${b.end}</td>
+      <td>${statusBadge(b.status)}</td>
+      <td>${b.status==='reserved'?`<button class="btn btn-danger btn-sm" onclick="cancelBooking(${b.id})">Cancel</button>`:'—'}</td>
+    </tr>`).join('');
+}
+function renderPayments() {
+  document.getElementById('payments-tbody').innerHTML = db.payments.map(p => `
+    <tr>
+      <td>${p.id}</td>
+      <td>${p.bid}</td>
+      <td>$${(p.cents/100).toFixed(2)}</td>
+      <td>${p.currency}</td>
+      <td>${statusBadge(p.status)}</td>
+      <td>${p.provider}</td>
+      <td>${p.paid||'—'}</td>
+    </tr>`).join('');
+}
+function renderDisputes() {
+  document.getElementById('disputes-tbody').innerHTML = db.disputes.map(d => `
+    <tr>
+      <td>${d.id}</td>
+      <td>#${d.bid}</td>
+      <td>${userName(d.opener)}</td>
+      <td>${d.admin ? userName(d.admin) : '<span style="color:var(--muted)">Unassigned</span>'}</td>
+      <td>${d.reason}</td>
+      <td>${statusBadge(d.status)}</td>
+      <td>${d.status!=='resolved'?`<button class="btn btn-success btn-sm" onclick="resolveDispute(${d.id})">Resolve</button>`:'—'}</td>
+    </tr>`).join('');
+}
+
+// ── CRUD actions ──────────────────────────────────────────────
+function showAlert(id, type, msg) {
+  document.getElementById(id).innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+  setTimeout(()=>{ const el=document.getElementById(id); if(el) el.innerHTML=''; }, 4000);
+}
+
+function addUser() {
+  const email = document.getElementById('u-email').value.trim();
+  const fname = document.getElementById('u-fname').value.trim();
+  const lname = document.getElementById('u-lname').value.trim();
+  const phone = document.getElementById('u-phone').value.trim();
+  const role  = document.getElementById('u-role').value;
+  if (!email) return showAlert('alert-users','error',' Email is required.');
+  if (db.users.find(u=>u.email===email))
+    return showAlert('alert-users','error',' ORA-00001: Unique constraint (UQ_USERS_EMAIL) violated — email already exists.');
+  db.users.push({id:db.nextId.users++, fname, lname, email, phone, role, active:1});
+  showAlert('alert-users','success',' User inserted successfully.');
+  renderUsers();
+  document.getElementById('u-email').value='';
+  document.getElementById('u-fname').value='';
+  document.getElementById('u-lname').value='';
+}
+
+function softDelete(uid) {
+  const u = db.users.find(x=>x.id===uid);
+  if (!u) return;
+  const hasBookings = db.bookings.find(b=>b.uid===uid);
+  if (hasBookings) {
+    showAlert('alert-users','warning',`️ Hard DELETE blocked (ORA-02292: child record found in BOOKINGS). Performing soft delete instead: is_active = 0.`);
+  } else {
+    showAlert('alert-users','success',' User deactivated (soft delete).');
+  }
+  u.active = 0;
+  renderUsers();
+}
+
+function addVehicle() {
+  const uid   = parseInt(document.getElementById('v-uid').value);
+  const plate = document.getElementById('v-plate').value.trim().toUpperCase();
+  const make  = document.getElementById('v-make').value.trim();
+  const model = document.getElementById('v-model').value.trim();
+  const color = document.getElementById('v-color').value.trim();
+  const year  = parseInt(document.getElementById('v-year').value);
+  if (!plate) return showAlert('alert-vehicles','error',' Plate number is required.');
+  if (!db.users.find(u=>u.id===uid))
+    return showAlert('alert-vehicles','error',' ORA-02291: Integrity constraint (FK_VEHICLES_USER) violated — user_id does not exist.');
+  if (db.vehicles.find(v=>v.plate===plate))
+    return showAlert('alert-vehicles','error',' ORA-00001: Unique constraint (UQ_PLATE) violated — plate number already exists.');
+  db.vehicles.push({id:db.nextId.vehicles++, uid, plate, make, model, color, year, active:1});
+  showAlert('alert-vehicles','success',' Vehicle registered successfully.');
+  renderVehicles();
+}
+
+function addSlot() {
+  const code  = document.getElementById('s-code').value.trim();
+  const level = document.getElementById('s-level').value.trim();
+  const zone  = document.getElementById('s-zone').value.trim();
+  const status= document.getElementById('s-status').value;
+  if (!code) return showAlert('alert-slots','error',' Slot code is required.');
+  if (db.slots.find(s=>s.code===code))
+    return showAlert('alert-slots','error',' ORA-00001: Unique constraint (UQ_SLOT_CODE) violated — slot code already exists.');
+  db.slots.push({id:db.nextId.slots++, code, level, zone, status});
+  showAlert('alert-slots','success',' Parking slot added successfully.');
+  renderSlots();
+}
+
+function updateSlotStatus(sid, val) {
+  const allowed = ['active','maintenance','closed'];
+  if (!allowed.includes(val)) return showAlert('alert-slots','error',' ORA-02290: Check constraint (CHK_SLOT_STATUS) violated.');
+  const s = db.slots.find(x=>x.id===sid);
+  if (s) s.status = val;
+  showAlert('alert-slots','success',` Slot ${sid} status updated to '${val}'.`);
+  renderSlots();
+}
+
+function addBooking() {
+  const uid   = parseInt(document.getElementById('b-uid').value);
+  const vid   = parseInt(document.getElementById('b-vid').value)||null;
+  const sid   = parseInt(document.getElementById('b-sid').value);
+  const start = document.getElementById('b-start').value;
+  const end   = document.getElementById('b-end').value;
+  if (!uid||!sid||!start||!end) return showAlert('alert-bookings','error',' User ID, Slot ID, Start, and End are required.');
+  if (!db.users.find(u=>u.id===uid))
+    return showAlert('alert-bookings','error',' ORA-02291: FK_BOOKINGS_USER violated — user does not exist.');
+  if (!db.slots.find(s=>s.id===sid))
+    return showAlert('alert-bookings','error',' ORA-02291: FK_BOOKINGS_SLOT violated — slot does not exist.');
+  if (new Date(end) <= new Date(start))
+    return showAlert('alert-bookings','error',' ORA-02290: CHK_BOOKING_TIME violated — end_time must be after start_time.');
+  db.bookings.push({id:db.nextId.bookings++, uid, vid, sid, start:start.replace('T',' '), end:end.replace('T',' '), status:'reserved'});
+  const bid = db.nextId.bookings - 1;
+  db.payments.push({id:db.nextId.payments++, bid, cents:1000, currency:'USD', status:'pending', provider:'Stripe', paid:null});
+  showAlert('alert-bookings','success',' Booking created and payment record generated (pending).');
+  renderBookings();
+  renderPayments();
+}
+
+function cancelBooking(bid) {
+  const b = db.bookings.find(x=>x.id===bid);
+  if (b) { b.status='cancelled'; }
+  const p = db.payments.find(x=>x.bid===bid);
+  if (p && p.status==='pending') p.status='refunded';
+  showAlert('alert-bookings','success',' Booking cancelled and payment refunded.');
+  renderBookings();
+  renderPayments();
+}
+
+function updatePayment() {
+  const pid    = parseInt(document.getElementById('p-id').value);
+  const status = document.getElementById('p-status').value;
+  const p = db.payments.find(x=>x.id===pid);
+  if (!p) return showAlert('alert-payments','error',' Payment ID not found.');
+  p.status = status;
+  if (status==='paid') p.paid = new Date().toISOString().split('T')[0];
+  showAlert('alert-payments','success',` Payment ${pid} updated to '${status}'.`);
+  renderPayments();
+}
+
+function addDispute() {
+  const bid    = parseInt(document.getElementById('d-bid').value);
+  const uid    = parseInt(document.getElementById('d-uid').value);
+  const reason = document.getElementById('d-reason').value.trim();
+  const desc   = document.getElementById('d-desc').value.trim();
+  if (!bid||!uid||!reason) return showAlert('alert-disputes','error',' Booking ID, User ID, and Reason are required.');
+  if (!db.bookings.find(b=>b.id===bid))
+    return showAlert('alert-disputes','error',' ORA-02291: FK_DISPUTES_BOOKING violated — booking does not exist.');
+  if (!db.users.find(u=>u.id===uid))
+    return showAlert('alert-disputes','error',' ORA-02291: FK_DISPUTES_OPENED violated — user does not exist.');
+  db.disputes.push({id:db.nextId.disputes++, bid, opener:uid, admin:null, reason, desc, status:'open'});
+  showAlert('alert-disputes','success',' Dispute opened successfully.');
+  renderDisputes();
+}
+
+function resolveDispute(did) {
+  const d = db.disputes.find(x=>x.id===did);
+  if (d) { d.status='resolved'; d.admin = d.admin||4; }
+  showAlert('alert-disputes','success',' Dispute resolved.');
+  renderDisputes();
+}
+
+// ── Edge case tests ───────────────────────────────────────────
+const ecResults = {
+  1: {type:'error', msg:' ORA-00001: Unique constraint (UQ_USERS_EMAIL) violated — email \'alice.johnson@email.com\' already exists in the USERS table. INSERT rejected.'},
+  2: {type:'error', msg:' ORA-02290: Check constraint (CHK_BOOKING_TIME) violated — end_time (08:00) is not after start_time (10:00). INSERT rejected.'},
+  3: {type:'error', msg:' ORA-00001: Unique constraint (UQ_PAYMENT_BOOKING) violated — a payment for booking_id = 1 already exists. Only one payment per booking is allowed.'},
+  4: {type:'error', msg:' ORA-02290: Check constraint (CHK_USERS_ROLE) violated — \'superadmin\' is not in (\'user\', \'admin\'). INSERT rejected.'},
+  5: {type:'error', msg:' ORA-02292: Integrity constraint (FK_BOOKINGS_USER) violated — child record found. User 1 has bookings. Hard DELETE blocked. Use soft delete (UPDATE is_active = 0) instead.'},
+  6: {type:'error', msg:' ORA-02290: Check constraint (CHK_SLOT_STATUS) violated — \'broken\' is not in (\'active\', \'maintenance\', \'closed\'). UPDATE rejected.'},
+  7: {type:'error', msg:' ORA-02291: Integrity constraint (FK_DISPUTES_BOOKING) violated — booking_id 9999 does not exist in the BOOKINGS table. INSERT rejected.'},
+  8: {type:'success', msg:' Soft delete successful — UPDATE users SET is_active = 0 WHERE user_id = 1. All booking and dispute records preserved. FK integrity maintained.'},
+};
+
+function runEC(n) {
+  const r = ecResults[n];
+  document.getElementById(`ec-result-${n}`).innerHTML = `<div class="alert alert-${r.type}">${r.msg}</div>`;
+}
+
+// ── Navigation ────────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    if(n.getAttribute('onclick').includes("'"+name+"'")) n.classList.add('active');
+  });
+  renderAll();
+}
+
+function showTab(name) {
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+function renderAll() {
+  if(document.getElementById('users-tbody')) renderUsers();
+  if(document.getElementById('vehicles-tbody')) renderVehicles();
+  if(document.getElementById('slots-tbody')) renderSlots();
+  if(document.getElementById('bookings-tbody')) renderBookings();
+  if(document.getElementById('payments-tbody')) renderPayments();
+  if(document.getElementById('disputes-tbody')) renderDisputes();
+}
+
+// ── Init ──────────────────────────────────────────────────────
+renderAll();
+</script>
+</body>
+</html>
